@@ -1,13 +1,15 @@
-import random, math, sys, pygame
+import random, math, sys, pygame, time
 
-width=400
-height=400
-w=200
-h=200
+width=1920
+height=1080
+w=320
+h=180
 ran=30
 stdheight=100
 grid= [[100 for i in range(h+1)] for j in range(w+1)]
-World=False
+location=[80,45]
+ui="Home"
+FromWorld=False
 
 def heights(ran, stdheight):
     x1=random.randint(-ran,ran)
@@ -53,9 +55,9 @@ def gen(h,w,ran,stdheight):
     for j in range(0,h):
         for i in range(0,w):
             out=make(i,j,ran,stdheight, False)
-            c=grid[i][j]
-            pygame.draw.rect(screen,(0,c,0),pygame.Rect(i*size,j*size,size,size))
-            pygame.display.update() 
+            #c=grid[i][j]
+            #pygame.draw.rect(screen,(0,c,0),pygame.Rect(i*4,j*4,4,4))
+            #pygame.display.update() 
             if out==True:
                 out=False
                 continue
@@ -68,9 +70,9 @@ def gen2(h,w,ran):
             i=w-i
             height=grid[i][j]
             out=make(i,j,ran,height, True)  
-            c=grid[i][j]
-            pygame.draw.rect(screen,(0,c,0),pygame.Rect(i*size,j*size,size,size))
-            pygame.display.update()       
+            #c=grid[i][j]
+            #pygame.draw.rect(screen,(0,c,0),pygame.Rect(i*4,j*4,4,4))
+            #pygame.display.update()       
             if out == True:
                 out=False
                 continue
@@ -81,37 +83,75 @@ Clock=pygame.time.Clock()
 FPS=60
 screen=pygame.display.set_mode((width,height),pygame.RESIZABLE)
 pygame.display.set_caption("perlin or something, idk")
-
-size=2
+temp=30
+size=30
 
 while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run=False
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_ESCAPE]:
-        break
-    (x,y)=pygame.mouse.get_pos()
-    screen.fill((255,255,255))
-    if pygame.mouse.get_pressed()[0]:
-        if 910<x<1010 and 515<y<565:
+
+
+    if ui=="Home":
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_ESCAPE] and FromWorld==False:
+            break
+        (x,y)=pygame.mouse.get_pos()
+        screen.fill((255,255,255))
+        pygame.draw.rect(screen,(0,0,0),pygame.Rect(width/2-50,height/2-25,100, 50))
+        pygame.display.update()
+        if pygame.mouse.get_pressed()[0]:
+            if 910<x<1010 and 515<y<565:
+                print("making")
+                ui="World"
+                grid = gen(h,w,ran,stdheight)
+                print("made")
+        elif keys[pygame.K_SPACE]:
             print("making")
+            ui="World"
             grid = gen(h,w,ran,stdheight)
-            World=True
             print("made")
-    elif keys[pygame.K_SPACE]:
-        print("making")
-        grid = gen(h,w,ran,stdheight)
-        World=True
-        print("made")
+        
+        if FromWorld:
+            temp-=1
+            if temp<=0:
+                FromWorld=False
 
-    if World:
-        for i in range(0,w):
-            for j in range(0,h):
-                c=grid[i][j]
+    elif ui=="World":
+
+        
+        keys = pygame.key.get_pressed()
+        
+        if keys[pygame.K_ESCAPE]:
+            ui="Home"
+            FromWorld=True
+
+        if keys[pygame.K_w] or keys[pygame.K_UP]:
+            location[1]-=1
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            location[1]+=1
+        
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            location[0]-=1
+        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            location[0]+=1
+        
+        if location[0]<0:
+            location[0]=0
+        elif location[0]>w-64:
+            location[0]=w-64
+        if location[1]<0:
+            location[1]=0
+        elif location[1]>h-36:
+            location[1]=h-36
+        
+        for i in range(0,64):
+            for j in range(0,36):
+                a=location[0]+i
+                b=location[1]+j
+                c=grid[a][b]
                 pygame.draw.rect(screen,(0,c,0),pygame.Rect(i*size,j*size,size,size))
-
-    pygame.draw.rect(screen,(0,0,0),pygame.Rect(width/2-50,height/2-25,100, 50))
+        
     Clock.tick(FPS) 
     pygame.display.update() 
 pygame.quit()
