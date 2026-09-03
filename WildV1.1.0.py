@@ -39,10 +39,7 @@ obsdict={
             }
 }
 
-itemdict={
-    "null": {"sprite":pygame.image.load(os.path.join('sprites', 'null.png')),
-            },
-             
+itemdict={             
     "axe":  {"health":100,
             "class":"axe",
             "toughness":1,
@@ -127,7 +124,7 @@ def gen(h,w,ran,stdheight, grid):   #generates comparing to left and above
             if out==True:
                 out=False
                 continue
-        GAME_FONT.render_to(screen, (40, 350), "making!", (255,255,255))
+        GAME_FONT.render_to(screen, (40, 350), "jarona!", (255,255,255))
         pygame.display.update()
     gen2(h,w,ran, grid, obsgrid)
     return grid
@@ -163,6 +160,14 @@ def obstructions(h,w,obsgrid):  # introduces obstacles, currently only trees
         b=random.randint(1,h-1)
         obsgrid[a][b]="Rock"
         gridhealth[a][b]=obsdict["Rock"]['health']
+    
+    for i in range(0,2):
+        a=random.randint(2,w-2)
+        b=random.randint(2,h-2)
+        for z in range(-1,2):
+            for x in range(-1,2):
+                obsgrid[a+z][b+x]="Rock"
+                gridhealth[a+z][b+x]=obsdict["Rock"]['health']
 
 def toolcheck(obstacle):
     if obstacle=="null":
@@ -430,12 +435,8 @@ while run:
 
             if keys[pygame.K_ESCAPE] and uichange!=True:
                 ui="esc"
-                uichange=True
-                temp=30
             elif keys[pygame.K_e]:
                 ui="inv"
-            elif keys[pygame.K_i]:
-                ui="craft"
             elif keys[pygame.K_1]:
                 inhand=person.inventory[0][0]
                 hand=[0,0]
@@ -537,10 +538,10 @@ while run:
                         textfile.write("\n")
                     textfile.write("\n")
                     textfile.write("\n")
-                    textfile.write(f"{person.vel}")
-                    textfile.write(f"{person.posx}")
-                    textfile.write(f"{person.posy}")
-                    textfile.write(f"{person.facing}")
+                    textfile.write(f"{person.vel}&\n")
+                    textfile.write(f"{person.posx}&\n")
+                    textfile.write(f"{person.posy}&\n")
+                    textfile.write(f"{person.facing}&\n")
                     textfile.write("\n")
                     textfile.write("\n")
                     for line in person.inventory:
