@@ -9,11 +9,11 @@ stdheight=100
 grid = [[100 for i in range(h+1)] for j in range(w+1)]
 obsgrid = [["null" for i in range(h+1)] for j in range(w+1)]
 gridhealth=[[0 for i in range(h+1)] for j in range(w+1)]
-dropgrid = [[0 for i in range((h+1))] for j in range((w+1))]
+dropgrid = [[0 for i in range(h+1)] for j in range((w+1))]
+craftgrid = [[0 for i in range (3)] for j in range(3)]
 location=[100,100]
 ui="Home"
 uichange=False
-TREE=-1
 hand =[0,0]
 
 
@@ -31,7 +31,7 @@ obsdict={
             "drops":("sapling","log"),
             "colour":(130,75,0)
             },
-    "Rock":{"health":20,
+    "Rock":{"health":20,   
             "tool":"pickaxe",
             "toughness":1,
             "drops":(0,"stone"),
@@ -44,29 +44,43 @@ itemdict={
             "class":"axe",
             "toughness":1,
             "sprite":pygame.image.load(os.path.join('sprites', 'axe.png')),
+            "placeable":False,
+            "edible":False,
             },
     "pickaxe":{"health":100,
             "class":"pickaxe",
             "toughness":1,
             "sprite":pygame.image.load(os.path.join('sprites', 'pickaxe.png')),
+            "placeable":False,
+            "edible":False,
             },
     "stone":{"health":0,
             "class":"none",
             "toughness":1,
             "sprite":pygame.image.load(os.path.join('sprites', 'stone.png')),
-            "placeable":True
+            "placeable":True,
+            "edible":False,
             },
     "log":{"health":0,
             "class":"none",
             "toughness":0,
             "sprite":pygame.image.load(os.path.join('sprites', 'log.png')),
-            "placeable":True
+            "placeable":True,
+            "edible":False,
             },
     "sapling":{"health":0,
             "class":"none",
             "toughness":0,
             "sprite":pygame.image.load(os.path.join('sprites', 'sapling.png')),
-            "placeable":True
+            "placeable":True,
+            "edible":False,
+            },
+    "food":{"health":0,
+            "class":"none",
+            "toughness":1,
+            "sprite":pygame.image.load(os.path.join('sprites', 'stone.png')),
+            "placeable":False,
+            "edible":True,
             }
 }
 
@@ -124,7 +138,6 @@ def gen(h,w,ran,stdheight, grid):   #generates comparing to left and above
             if out==True:
                 out=False
                 continue
-        GAME_FONT.render_to(screen, (40, 350), "jarona!", (255,255,255))
         pygame.display.update()
     gen2(h,w,ran, grid, obsgrid)
     return grid
@@ -141,7 +154,6 @@ def gen2(h,w,ran, grid,obsgrid):        #generates comparing to right and above 
             if out == True:
                 out=False
                 continue
-        GAME_FONT.render_to(screen, (40, 350), "making!", (255,255,255))
         pygame.display.update()
     for i in grid:
         print
@@ -182,9 +194,19 @@ def toolcheck(obstacle):
         pygame.display.update()
         return False
 
+keydetection=[f"{x}" for x in range(1,10)]
+keydetection.append("0")
+keydetection.append("-")
+keydetection.append("=")
+
+
+            
+
+
+    
 class Player:
 
-    def __init__(self,vel,posx,posy,facing,inventory):
+    def __init__(self,vel,posx,posy,facing,inventory,health):
         self.vel=vel
         self.posx=posx
         self.posy=posy
@@ -193,6 +215,7 @@ class Player:
         self.image=pygame.Surface((30,30))
         self.image.fill((150,75,0))
         self.rect=self.image.get_rect()
+        self.health=health
 
     def movement(self):
         keys=pygame.key.get_pressed()
@@ -261,17 +284,33 @@ class Player:
                     gridhealth[currentobstaclelocation[0]][currentobstaclelocation[1]]=0
                     drops(currentobstaclelocation, obsgrid, obsdict,dropgrid)
                     obsgrid[currentobstaclelocation[0]][currentobstaclelocation[1]]="null"
-    
 
-person=Player(1, location[0],location[1],"right",[["null" for i in range (3)] for j in range(12)])
+        if pygame.mouse.get_pressed()[0] and itemdict[inhand]["edible"]:
+            self.health+=5
+            self.inventory[hand[0]][hand[1]]=0
+            if self.health>=100:
+                self.health==100
+    
+    def swap(self,keys,gridposx,gridposy):
+        for i in keydetection:
+            if keys[pygame.key.key_code(f"{i}")]:
+                pos=keydetection.index(i)
+        
+                placeholder=self.inventory[pos][0]
+                self.inventory[pos][0]=craftgrid[gridposx][gridposy]
+                craftgrid[gridposx][gridposy]=placeholder
+    
+# ₰ 
+
+person=Player(1, location[0],location[1],"right",[["null" for i in range (3)] for j in range(12)], 100)
 
 for i in range(0,12):
     person.inventory[i][0]=0
 person.inventory[0][0]="axe"
 person.inventory[1][0]="pickaxe"
+person.inventory[11][0]="food"
 
-
-def showworld(grid):    #displaying the world in all 9 zones
+def showworld():    #displaying the world in all 9 zones
     if 93<person.posx<=w*3-192 and 48<person.posy<=h*3-108: #centre
         for i in range(0,65):
             for j in range(0,37):
@@ -376,8 +415,8 @@ def display(a,b,maplocation):
         
 def drops(currentobstaclelocation, obsgrid, obsdict,dropgrid):    #where obstacles are broken and dropped on the floor
     for z in range (0, len(obsdict[obsgrid[currentobstaclelocation[0]][currentobstaclelocation[1]]]["drops"])):
+        a, b = -1, -1
         if dropgrid[currentobstaclelocation[0]][currentobstaclelocation[1]]==0:
-            a, b = -1, -1
             dropgrid[currentobstaclelocation[0]][currentobstaclelocation[1]] = obsdict[obsgrid[currentobstaclelocation[0]][currentobstaclelocation[1]]]["drops"][z]
         else:
             while dropgrid[currentobstaclelocation[0]+a][currentobstaclelocation[1]+b]!=0:
@@ -389,10 +428,16 @@ def drops(currentobstaclelocation, obsgrid, obsdict,dropgrid):    #where obstacl
                     break
             dropgrid[currentobstaclelocation[0]+a][currentobstaclelocation[1]+b] = obsdict[obsgrid[currentobstaclelocation[0]][currentobstaclelocation[1]]]["drops"][z]
 
+def loadgrid():
+    with open("saves.txt","r") as file:
+        for i in range(0,180):
+            1+1
+
+
 run=True
 
 Clock=pygame.time.Clock()
-FPS=120
+FPS=60
 screen=pygame.display.set_mode((width,height),pygame.RESIZABLE)
 pygame.display.set_caption("wild")
 temp=0
@@ -400,8 +445,7 @@ size=30
 inhand = person.inventory[0][0]
 pygame.init()
 GAME_FONT = pygame.freetype.Font("Roboto-Italic-VariableFont_wdth,wght.ttf", 20)
-
-textlist=("return to game","save","quit to menu")
+textlist=("return to game","save","quit to menu","New Game","Load Game")
 
 while run:
     for event in pygame.event.get():
@@ -416,13 +460,19 @@ while run:
                 break
             (x,y)=pygame.mouse.get_pos()
             screen.fill((255,255,255))
-            pygame.draw.rect(screen,(0,0,0),pygame.Rect(width/2-50,height/2-25,100, 50))
-            GAME_FONT.render_to(screen, (width/2-47,height/2-15), "New Game", (255, 255, 255))
-            pygame.display.update()
+            for i in range(0,2):
+                pygame.draw.rect(screen,(0,0,0),pygame.Rect(width/2-50,height/2-25+i*70,100, 50))
+                GAME_FONT.render_to(screen, (width/2-47,height/2-15), textlist(i+3), (255, 255, 255))
+                pygame.display.update()
             if pygame.mouse.get_pressed()[0] and 910<x<1010 and 515<y<565 or keys[pygame.K_SPACE]:
                 pygame.draw.rect(screen,(0,0,0),pygame.Rect(0,0,width,height))
                 ui="World"
                 grid = gen(h,w,ran,stdheight, grid)
+            elif pygame.mouse.get_pressed()[0] and 910<x<1010 and 585<y<635:
+                pygame.draw.rect(screen,(0,0,0),pygame.Rect(0,0,width,height))
+                ui="World"
+                loadgrid()
+
 
             if uichange:
                 temp-=1
@@ -437,48 +487,15 @@ while run:
                 ui="esc"
             elif keys[pygame.K_e]:
                 ui="inv"
-            elif keys[pygame.K_1]:
-                inhand=person.inventory[0][0]
-                hand=[0,0]
-            elif keys[pygame.K_2]:
-                inhand=person.inventory[1][0]
-                hand=[1,0] 
-            elif keys[pygame.K_3]:
-                inhand=person.inventory[2][0]
-                hand=[2,0] 
-            elif keys[pygame.K_4]:
-                inhand=person.inventory[3][0]
-                hand=[3,0] 
-            elif keys[pygame.K_5]:
-                inhand=person.inventory[4][0]
-                hand=[4,0] 
-            elif keys[pygame.K_6]:
-                inhand=person.inventory[5][0]
-                hand=[5,0] 
-            elif keys[pygame.K_7]:
-                inhand=person.inventory[6][0]
-                hand=[6,0] 
-            elif keys[pygame.K_8]:
-                inhand=person.inventory[7][0]
-                hand=[7,0] 
-            elif keys[pygame.K_9]:
-                inhand=person.inventory[8][0]
-                hand=[8,0] 
-            elif keys[pygame.K_0]:
-                inhand=person.inventory[9][0]
-                hand=[9,0] 
-            elif keys[pygame.K_MINUS]:
-                inhand=person.inventory[10][0]
-                hand=[10,0] 
-            elif keys[pygame.K_EQUALS]:
-                inhand=person.inventory[11][0]
-                hand=[11,0] 
-            
+            for i in keydetection:
+                if keys[pygame.key.key_code(f"{i}")]:
+                    inhand=person.inventory[keydetection.index(i)][0]
+                    hand=[keydetection.index(i),0]
             person.movement()
 
             person.interact()
             
-            showworld(grid)
+            showworld()
             if uichange:
                 temp-=1
                 if temp<=0:
@@ -508,6 +525,20 @@ while run:
                 for j in range(0,3):
                     pygame.draw.rect(screen,(150,150,150), pygame.Rect(825+i*90,210+j*90,90,90))
                     pygame.draw.rect(screen,(100,100,100), pygame.Rect(830+i*90,215+j*90,80,80))
+                    if craftgrid[i][j] in itemdict:
+                        screen.blit(pygame.transform.scale((itemdict[craftgrid[i][j]]["sprite"]),(80,80)),(830+i*90,215+j*90,80,80))
+                    if 830+i*90<x<830+(i+1)*90-10 and temp==0:
+                        if 215+j*90<y<215+(j+1)*90-10:
+                            gridposx=i
+                            gridposy=j
+                            person.swap(keys,gridposx,gridposy)
+                            temp=30
+            if temp!=0:
+                temp-=1
+                            
+            
+        
+
             if keys[pygame.K_ESCAPE]:
                 ui="World"
                 uichange=True
@@ -518,34 +549,34 @@ while run:
             (x,y)=pygame.mouse.get_pos()
             for i in range(0,3):
                 pygame.draw.rect(screen,(150,150,150), pygame.Rect(width/2-300,height/2-400+250*i,600,150))
-                GAME_FONT.render_to(screen, (width/2-300,height/2-400+250*i), textlist[i], (255,255,255))
+                GAME_FONT.render_to(screen, (width/2-50,height/2-300+250*i), textlist[i], (255,255,255))
             if pygame.mouse.get_pressed()[0] and width/2-300<x<width/2+300 and height/2-400<y<height/2-250:
                 ui="World"
             if pygame.mouse.get_pressed()[0] and width/2-300<x<width/2+300 and height/2-150<y<height/2:
                 with open("saves.txt","w") as textfile:
                     for line in obsgrid:
-                        textfile.write(f"{line}&")
+                        for item in line:
+                            textfile.write(f"{item},")
                         textfile.write("\n")
-                    textfile.write("\n")
-                    textfile.write("\n")
+                    textfile.write("\n\n")
                     for line in dropgrid:
-                        textfile.write(f"{line}&")
+                        for item in line:
+                            textfile.write(f"{item},")
                         textfile.write("\n")
-                    textfile.write("\n")
-                    textfile.write("\n")
+                    textfile.write("\n\n")
                     for line in grid:
-                        textfile.write(f"{line}&")
+                        for item in line:
+                            textfile.write(f"{item},")
                         textfile.write("\n")
-                    textfile.write("\n")
-                    textfile.write("\n")
-                    textfile.write(f"{person.vel}&\n")
-                    textfile.write(f"{person.posx}&\n")
-                    textfile.write(f"{person.posy}&\n")
-                    textfile.write(f"{person.facing}&\n")
-                    textfile.write("\n")
-                    textfile.write("\n")
+                    textfile.write("\n\n")
+                    textfile.write(f"{person.vel},\n")
+                    textfile.write(f"{person.posx},\n")
+                    textfile.write(f"{person.posy},\n")
+                    textfile.write(f"{person.facing},\n")
+                    textfile.write("\n\n")
                     for line in person.inventory:
-                        textfile.write(f"{line}&")
+                        for item in line:
+                            textfile.write(f"{item},")
                         textfile.write("\n")
             if pygame.mouse.get_pressed()[0] and width/2-300<x<width/2+300 and height/2+100<y<height/2+250:#
                 ui="Home"
